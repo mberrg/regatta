@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "sourceMap": true,
+    "target": "es6",
+    "strict": true,
+    "experimentalDecorators": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "outDir": "",
+    "baseUrl": "./src/",
+    // "checkJs": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["./src/**/*", "./src/**/*.vue", "./src-pwa/**/*"],
+  "exclude": ["node_modules", "definitions"]
+}
