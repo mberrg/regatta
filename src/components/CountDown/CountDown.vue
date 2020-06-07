@@ -17,6 +17,7 @@
 <script lang="ts">
 import { defineComponent, computed } from '@vue/composition-api';
 import { useCountDown } from './store';
+
 export default defineComponent({
   name: 'CountDown',
 
@@ -32,15 +33,16 @@ export default defineComponent({
 
     const heading = computed(() => {
       const isNegative = nextHeat.value < 0;
+      const heatTime = useCountDown.nextStartTime();
       if (currentHeat.value == 1 && !isNegative) {
-        return `First heat starting ${startTime.value.toLocaleTimeString()}`;
+        return `First heat starting ${heatTime.value.toLocaleTimeString()}`;
       }
       if (!isNegative) {
         return `Heat ${
           currentHeat.value
-        } starting ${startTime.value.toLocaleTimeString()}`;
+        } starting ${heatTime.value.toLocaleTimeString()}`;
       }
-      return `Last heat started ${startTime.value.toLocaleTimeString()}`;
+      return `Last heat started ${heatTime.value.toLocaleTimeString()}`;
     });
 
     const footer = computed(() => {

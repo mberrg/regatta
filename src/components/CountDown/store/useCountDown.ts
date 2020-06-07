@@ -1,5 +1,5 @@
 import { Store } from 'src/useStore';
-import { CounterState } from '../models';
+import { CounterState, SetState } from '../models';
 import { computed } from '@vue/composition-api';
 
 class CountDownStore extends Store<CounterState> {
@@ -15,27 +15,109 @@ class CountDownStore extends Store<CounterState> {
       intervalFunc: undefined
     };
   }
+  constructor() {
+    super();
 
-  setStarttime(newStartTime: Date, numHeat: number, heatDelay: number) {
-    const millsToNext = newStartTime.valueOf() - new Date().valueOf();
-    this.state.numHeats = numHeat;
-    this.state.delayMinutesBetweenHeats = heatDelay;
+    this.connectWS();
+  }
 
-    this.state.startTime = newStartTime;
-    this.state.nextHeat = millsToNext;
-    this.state.started = true;
-    this.state.finnished = false;
-    this.state.currentHeat = 1;
+  connectWS() {
+    // Create WebSocket connection.
+    const socket = new WebSocket('ws://localhost:80/ws');
+    // Listen for messages
+    socket.addEventListener('message', event => {
+      console.log('Message from server ', event.data);
+      try {
+        const newState = JSON.parse(event.data) as SetState; // TODO check for correct data
+        this.setState(newState);
+      } catch (err) {
+        console.error(err);
+      }
+    });
+    socket.onclose = e => {
+      console.log(
+        'Socket is closed. Reconnect will be attempted in 1 second.',
+        e.reason
+      );
+      setTimeout(() => {
+        this.connectWS();
+      }, 1000);
+    };
+
+    socket.onerror = function(err) {
+      console.error('Socket encountered error: ', err, 'Closing socket');
+      socket.close();
+    };
+  }
+
+  setState(newState: SetState) {
+    const {
+      startTimeMs,
+      delayMinutesBetweenHeats,
+      numHeats,
+      started
+    } = newState;
+    const now = new Date().valueOf();
+    this.state.startTime = new Date(startTimeMs);
+    this.state.delayMinutesBetweenHeats = delayMinutesBetweenHeats;
+    this.state.numHeats = numHeats;
+    if (started) {
+      this.state.started = true;
+      const msSinceStart = now - startTimeMs;
+
+      if (msSinceStart < 0) {
+        // Not started heat 1
+        this.state.nextHeat = -msSinceStart;
+        this.state.currentHeat = 1;
+        this.state.finnished = false;
+      } else {
+        let currentHeat =
+          Math.ceil(msSinceStart / (delayMinutesBetweenHeats * 60 * 1000)) + 1;
+        console.log(`Current heat raw ${currentHeat}`);
+
+        if (currentHeat > numHeats) {
+          this.state.finnished = true;
+          currentHeat = numHeats;
+        }
+        console.log(`Current heat  ${currentHeat}`);
+        this.state.currentHeat = currentHeat;
+
+        this.state.nextHeat =
+          startTimeMs +
+          delayMinutesBetweenHeats * 60 * 1000 * (currentHeat - 1) -
+          now;
+        console.log(`next heat heat  ${this.state.nextHeat}`);
+      }
+    }
+
+    this.startTimer();
+  }
+
+  nextStartTime() {
+    return computed(() => {
+      if (!this.state.started) return new Date();
+
+      return new Date(
+        this.state.startTime.valueOf() +
+          this.state.delayMinutesBetweenHeats *
+            60 *
+            1000 *
+            (this.state.currentHeat - 1)
+      );
+    });
+  }
+
+  startTimer() {
+    if (!this.state.started) return;
 
     if (this.state.intervalFunc) clearInterval(this.state.intervalFunc);
+
     const interval = setInterval(() => {
       let newtime = this.state.nextHeat - 1000;
+
       if (newtime < 0 && this.state.currentHeat < this.state.numHeats) {
         newtime = newtime + this.state.delayMinutesBetweenHeats * 60 * 1000;
-        this.state.startTime = new Date(
-          this.state.startTime.valueOf() +
-            this.state.delayMinutesBetweenHeats * 60 * 1000
-        );
+
         this.state.currentHeat++;
       }
       if (!this.state.finnished && newtime < 0) this.state.finnished = true;
@@ -44,6 +126,12 @@ class CountDownStore extends Store<CounterState> {
     this.state.intervalFunc = interval;
   }
 
+  stopTimer() {
+    if (this.state.intervalFunc) {
+      clearInterval(this.state.intervalFunc);
+      this.state.intervalFunc = undefined;
+    }
+  }
   getTimeleft() {
     return computed(() => {
       function pad(num: number, size: number) {

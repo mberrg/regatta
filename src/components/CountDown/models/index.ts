@@ -8,3 +8,13 @@ export interface CounterState extends Object {
   finnished: boolean;
   intervalFunc?: NodeJS.Timeout;
 }
+
+export interface SetState {
+  startTimeMs: number;
+  delayMinutesBetweenHeats: number;
+  nextHeat: number;
+  numHeats: number;
+  currentHeat: number;
+  started: boolean;
+  finnished: boolean;
+}

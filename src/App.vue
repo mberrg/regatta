@@ -5,7 +5,13 @@
 </template>
 
 <script lang="ts">
-export default {
-  name: 'App'
-}
+import { defineComponent, onMounted } from '@vue/composition-api';
+import { useCountDown, SetState } from 'components/CountDown';
+
+export default defineComponent({
+  name: 'App',
+  setup() {
+    return {};
+  }
+});
 </script>

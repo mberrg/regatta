@@ -59,7 +59,7 @@ import {
 import { date } from 'quasar';
 import ResizeText from 'vue-resize-text';
 
-import { CountDown, useCountDown } from 'components/CountDown';
+import { CountDown, useCountDown, SetState } from 'components/CountDown';
 
 export default defineComponent({
   name: 'AdminPage',
@@ -76,7 +76,7 @@ export default defineComponent({
       startTime: '00:00'
     });
 
-    const start = function() {
+    const start = async () => {
       const hour = parseInt(state.startTime.split(':')[0]);
       const minute = parseInt(state.startTime.split(':')[1]);
 
@@ -89,14 +89,40 @@ export default defineComponent({
         startTime = date.addToDate(startTime, { days: 1 });
       }
 
-      startTime = date.adjustDate(startTime, {
-        hours: hour,
-        minutes: minute,
-        seconds: 0,
-        milliseconds: 0
-      });
+      const startTimeMs = date
+        .adjustDate(startTime, {
+          hours: hour,
+          minutes: minute,
+          seconds: 0,
+          milliseconds: 0
+        })
+        .valueOf();
 
-      useCountDown.setStarttime(startTime, state.numHeats, state.heatDelay);
+      const newState: SetState = {
+        startTimeMs: startTimeMs,
+        nextHeat: startTimeMs - new Date().valueOf(),
+        numHeats: state.numHeats,
+        delayMinutesBetweenHeats: state.heatDelay,
+        started: true,
+        finnished: false,
+        currentHeat: 1
+      };
+      const location = 'http://localhost/newState';
+      const settings = {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newState)
+      };
+      try {
+        const fetchResponse = await fetch(location, settings);
+        const data = await fetchResponse.json();
+        return data;
+      } catch (e) {
+        console.log(e);
+      }
     };
     return { ...toRefs(state), start };
   }
