@@ -59,7 +59,7 @@ import {
 import { date } from 'quasar';
 import ResizeText from 'vue-resize-text';
 
-import { CountDown, useCountDown, SetState } from 'components/CountDown';
+import { CountDown, SetState } from 'components/CountDown';
 
 export default defineComponent({
   name: 'AdminPage',
@@ -107,19 +107,19 @@ export default defineComponent({
         finnished: false,
         currentHeat: 1
       };
-      const location = 'http://localhost/newState';
-      const settings = {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(newState)
-      };
+      const location = 'https://regattastart.herokuapp.com/newState';
+
       try {
-        const fetchResponse = await fetch(location, settings);
-        const data = await fetchResponse.json();
-        return data;
+        const fetchResponse = await fetch(location, {
+          method: 'POST',
+          mode: 'cors', // no-cors, *cors, same-origin
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(newState)
+        });
+        await fetchResponse.json();
       } catch (e) {
         console.log(e);
       }

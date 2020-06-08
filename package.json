@@ -1,12 +1,16 @@
 {
-  "name": "regatta",
+  "name": "@mberrg/regatta",
   "version": "0.0.1",
   "description": "A app for regatta start",
   "productName": "Regatta App",
   "cordovaId": "org.cordova.quasar.app",
   "capacitorId": "",
   "author": "Morten Berg <morten.berg@nortekgroup.com>",
-  "private": true,
+  "repository": "git://github.com/mberrg/regatta.git",
+  "private": false,
+  "files": [
+    "dist/pwa"
+  ],
   "scripts": {
     "lint": "eslint --ext .js,.ts,.vue ./",
     "test": "echo \"No test specified\" && exit 0"

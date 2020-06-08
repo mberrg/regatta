@@ -23,7 +23,7 @@ class CountDownStore extends Store<CounterState> {
 
   connectWS() {
     // Create WebSocket connection.
-    const socket = new WebSocket('ws://localhost:80/ws');
+    const socket = new WebSocket('ws://regattastart.herokuapp.com/ws');
     // Listen for messages
     socket.addEventListener('message', event => {
       console.log('Message from server ', event.data);
@@ -88,9 +88,17 @@ class CountDownStore extends Store<CounterState> {
           now;
         console.log(`next heat heat  ${this.state.nextHeat}`);
       }
-    }
+      const nextWholeSecond = this.state.nextHeat % 1000;
 
-    this.startTimer();
+      if (nextWholeSecond) {
+        setTimeout(() => {
+          this.state.nextHeat -= nextWholeSecond;
+          this.startTimer();
+        }, nextWholeSecond);
+      } else {
+        this.startTimer();
+      }
+    }
   }
 
   nextStartTime() {
@@ -110,9 +118,9 @@ class CountDownStore extends Store<CounterState> {
   startTimer() {
     if (!this.state.started) return;
 
-    if (this.state.intervalFunc) clearInterval(this.state.intervalFunc);
-
-    const interval = setInterval(() => {
+    if (this.state.intervalFunc) this.stopTimer();
+    console.log('Starting timer');
+    this.state.intervalFunc = setInterval(() => {
       let newtime = this.state.nextHeat - 1000;
 
       if (newtime < 0 && this.state.currentHeat < this.state.numHeats) {
@@ -120,16 +128,23 @@ class CountDownStore extends Store<CounterState> {
 
         this.state.currentHeat++;
       }
+
       if (!this.state.finnished && newtime < 0) this.state.finnished = true;
+      console.log(
+        `Remaining time: ${newtime} vs ${this.state.startTime.valueOf() -
+          new Date().valueOf()} (${newtime % 1000})`
+      );
       this.state.nextHeat = newtime;
     }, 1000);
-    this.state.intervalFunc = interval;
   }
 
   stopTimer() {
     if (this.state.intervalFunc) {
+      console.log('Stopping timer');
       clearInterval(this.state.intervalFunc);
       this.state.intervalFunc = undefined;
+    } else {
+      console.log('Timer does not exists timer');
     }
   }
   getTimeleft() {
