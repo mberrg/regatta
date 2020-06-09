@@ -5,13 +5,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted } from '@vue/composition-api';
-import { useCountDown, SetState } from 'components/CountDown';
+import { defineComponent, onUnmounted } from '@vue/composition-api';
 
 export default defineComponent({
   name: 'App',
   setup() {
     return {};
+    onUnmounted(() => {
+      console.log('App unmounted!');
+    });
   }
 });
 </script>

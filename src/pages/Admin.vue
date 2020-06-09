@@ -42,7 +42,7 @@
       class="col  flex flex-center content-stretch text-center"
       style="width: 100%"
     >
-      <count-down class="fit  bg-red" v-resize-text="{ ratio: 0.5 }" />
+      <count-down class="fit  " v-resize-text="{ ratio: 0.5 }" />
     </div>
   </q-page>
 </template>
@@ -100,12 +100,9 @@ export default defineComponent({
 
       const newState: SetState = {
         startTimeMs: startTimeMs,
-        nextHeat: startTimeMs - new Date().valueOf(),
         numHeats: state.numHeats,
         delayMinutesBetweenHeats: state.heatDelay,
-        started: true,
-        finnished: false,
-        currentHeat: 1
+        started: true
       };
       const location = 'https://regattastart.herokuapp.com/newState';
 

@@ -1,5 +1,6 @@
 <template>
-  <div class="countdown">
+  <div v-if="!started">Waiting setup</div>
+  <div v-else class="countdown">
     <div style="font-size: 0.2em; ">
       {{ heading }}
     </div>
@@ -23,38 +24,44 @@ export default defineComponent({
 
   setup() {
     const {
-      startTime,
       currentHeat,
       numHeats,
-      nextHeat
+      finnished,
+      started
     } = useCountDown.getState();
 
     const countdown = useCountDown.getTimeleft();
 
     const heading = computed(() => {
-      const isNegative = nextHeat.value < 0;
       const heatTime = useCountDown.nextStartTime();
-      if (currentHeat.value == 1 && !isNegative) {
+      if (currentHeat.value == 0) {
         return `First heat starting ${heatTime.value.toLocaleTimeString()}`;
       }
-      if (!isNegative) {
-        return `Heat ${
-          currentHeat.value
-        } starting ${heatTime.value.toLocaleTimeString()}`;
+      if (!finnished.value) {
+        return `Heat ${currentHeat.value +
+          1} starting ${heatTime.value.toLocaleTimeString()}`;
       }
       return `Last heat started ${heatTime.value.toLocaleTimeString()}`;
     });
 
     const footer = computed(() => {
-      const isNegative = nextHeat.value < 0;
-
-      if (!isNegative) {
+      if (currentHeat.value < 1) {
+        return 'Waiting first start';
+      }
+      if (!finnished.value) {
         return `Heat ${currentHeat.value} of ${numHeats.value}`;
       }
-      return `All heat started ${currentHeat.value} of ${numHeats.value}`;
+      return `All heat started (${currentHeat.value + 1} of ${numHeats.value})`;
     });
 
-    return { startTime, currentHeat, numHeats, heading, footer, countdown };
+    return {
+      started,
+      currentHeat,
+      numHeats,
+      heading,
+      footer,
+      countdown
+    };
   }
 });
 </script>

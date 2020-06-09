@@ -1,12 +1,21 @@
-import { Store } from 'src/useStore';
+import { Store, useClock } from 'src/useStore';
 import { CounterState, SetState } from '../models';
 import { computed } from '@vue/composition-api';
 
+function pad(num: number, size: number) {
+  let s = String(num);
+  while (s.length < (size || 2)) {
+    s = '0' + s;
+  }
+  return s;
+}
+
 class CountDownStore extends Store<CounterState> {
+  private socket?: WebSocket;
+  private connected = false;
   protected data(): CounterState {
     return {
-      startTime: new Date(0),
-      nextHeat: 0,
+      startTimeMs: 0,
       delayMinutesBetweenHeats: 15,
       numHeats: 3,
       currentHeat: 0,
@@ -18,14 +27,21 @@ class CountDownStore extends Store<CounterState> {
   constructor() {
     super();
 
+    useClock.startClock();
+
     this.connectWS();
   }
-
+  closeWS() {
+    if (this.socket) this.socket.close();
+    this.connected = false;
+  }
   connectWS() {
+    if (this.socket) this.socket.close();
     // Create WebSocket connection.
-    const socket = new WebSocket('ws://regattastart.herokuapp.com/ws');
-    // Listen for messages
-    socket.addEventListener('message', event => {
+    this.socket = new WebSocket('wss://regattastart.herokuapp.com/ws');
+    this.connected = true;
+    // Listen for message
+    this.socket.addEventListener('message', event => {
       console.log('Message from server ', event.data);
       try {
         const newState = JSON.parse(event.data) as SetState; // TODO check for correct data
@@ -34,19 +50,21 @@ class CountDownStore extends Store<CounterState> {
         console.error(err);
       }
     });
-    socket.onclose = e => {
-      console.log(
-        'Socket is closed. Reconnect will be attempted in 1 second.',
-        e.reason
-      );
-      setTimeout(() => {
-        this.connectWS();
-      }, 1000);
+    this.socket.onclose = e => {
+      if (this.connected) {
+        console.error(
+          'Socket is closed. Reconnect will be attempted in 1 second.',
+          e.reason
+        );
+        setTimeout(() => {
+          this.connectWS();
+        }, 1000);
+      }
     };
 
-    socket.onerror = function(err) {
+    this.socket.onerror = err => {
       console.error('Socket encountered error: ', err, 'Closing socket');
-      socket.close();
+      if (this.socket) this.socket.close();
     };
   }
 
@@ -57,62 +75,62 @@ class CountDownStore extends Store<CounterState> {
       numHeats,
       started
     } = newState;
-    const now = new Date().valueOf();
-    this.state.startTime = new Date(startTimeMs);
+
+    this.state.startTimeMs = startTimeMs;
     this.state.delayMinutesBetweenHeats = delayMinutesBetweenHeats;
     this.state.numHeats = numHeats;
+
     if (started) {
       this.state.started = true;
-      const msSinceStart = now - startTimeMs;
+      this.state.finnished = false;
+      const msSinceStart = Date.now() - startTimeMs;
 
       if (msSinceStart < 0) {
         // Not started heat 1
-        this.state.nextHeat = -msSinceStart;
-        this.state.currentHeat = 1;
-        this.state.finnished = false;
+
+        this.state.currentHeat = 0;
       } else {
-        let currentHeat =
-          Math.ceil(msSinceStart / (delayMinutesBetweenHeats * 60 * 1000)) + 1;
+        let currentHeat = Math.ceil(
+          msSinceStart / (delayMinutesBetweenHeats * 60 * 1000)
+        );
         console.log(`Current heat raw ${currentHeat}`);
 
         if (currentHeat > numHeats) {
           this.state.finnished = true;
-          currentHeat = numHeats;
+          currentHeat = numHeats - 1;
+          console.log('FOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO');
+          debugger;
         }
-        console.log(`Current heat  ${currentHeat}`);
         this.state.currentHeat = currentHeat;
 
-        this.state.nextHeat =
-          startTimeMs +
-          delayMinutesBetweenHeats * 60 * 1000 * (currentHeat - 1) -
-          now;
-        console.log(`next heat heat  ${this.state.nextHeat}`);
+        console.log(`next heat heat  ${new Date(this.state.startTimeMs)}`);
       }
-      const nextWholeSecond = this.state.nextHeat % 1000;
 
-      if (nextWholeSecond) {
-        setTimeout(() => {
-          this.state.nextHeat -= nextWholeSecond;
+      if (!this.state.finnished) {
+        const nextWholeSecond = Date.now() % 1000;
+
+        if (nextWholeSecond) {
+          setTimeout(() => {
+            this.startTimer();
+          }, nextWholeSecond);
+        } else {
           this.startTimer();
-        }, nextWholeSecond);
-      } else {
-        this.startTimer();
+        }
       }
     }
   }
 
   nextStartTime() {
     return computed(() => {
-      if (!this.state.started) return new Date();
-
-      return new Date(
-        this.state.startTime.valueOf() +
-          this.state.delayMinutesBetweenHeats *
-            60 *
-            1000 *
-            (this.state.currentHeat - 1)
-      );
+      return new Date(this.state.started ? this.nextStartTimeMs() : 0);
     });
+  }
+
+  nextStartTimeMs() {
+    return (
+      this.state.startTimeMs +
+      this.state.currentHeat * this.state.delayMinutesBetweenHeats * 60 * 1000
+    );
   }
 
   startTimer() {
@@ -121,20 +139,16 @@ class CountDownStore extends Store<CounterState> {
     if (this.state.intervalFunc) this.stopTimer();
     console.log('Starting timer');
     this.state.intervalFunc = setInterval(() => {
-      let newtime = this.state.nextHeat - 1000;
+      const newtime = this.nextStartTimeMs() - new Date().valueOf();
 
-      if (newtime < 0 && this.state.currentHeat < this.state.numHeats) {
-        newtime = newtime + this.state.delayMinutesBetweenHeats * 60 * 1000;
-
-        this.state.currentHeat++;
+      if (newtime < 0) {
+        if (this.state.currentHeat < this.state.numHeats - 1) {
+          this.state.currentHeat++;
+        } else {
+          this.state.finnished = true;
+          this.stopTimer();
+        }
       }
-
-      if (!this.state.finnished && newtime < 0) this.state.finnished = true;
-      console.log(
-        `Remaining time: ${newtime} vs ${this.state.startTime.valueOf() -
-          new Date().valueOf()} (${newtime % 1000})`
-      );
-      this.state.nextHeat = newtime;
     }, 1000);
   }
 
@@ -149,28 +163,34 @@ class CountDownStore extends Store<CounterState> {
   }
   getTimeleft() {
     return computed(() => {
-      function pad(num: number, size: number) {
-        let s = String(num);
-        while (s.length < (size || 2)) {
-          s = '0' + s;
-        }
-        return s;
-      }
+      const { now } = useClock.getState();
 
-      let timeDif = this.state.nextHeat;
+      let timeDif = this.nextStartTimeMs() - now.value;
 
       let isNegative = false;
       if (timeDif < 0) {
-        timeDif = Math.abs(timeDif);
-        isNegative = true;
+        if (this.state.finnished) {
+          timeDif = Math.abs(timeDif);
+          isNegative = true;
+        } else {
+          // to stop clock "flickering"
+          timeDif = 0;
+        }
       }
-      const milliseconds = timeDif % 1000;
+      let milliseconds = timeDif % 1000;
       timeDif = (timeDif - milliseconds) / 1000; // Now in whole seconds left
-      const seconds = timeDif % 60;
+      let seconds = timeDif % 60;
       timeDif = (timeDif - seconds) / 60; // Now in whole minutes left
-      const minutes = timeDif % 60;
+      let minutes = timeDif % 60;
       timeDif = (timeDif - minutes) / 60; // Now in whole hours left
-      const hours = timeDif;
+      let hours = timeDif;
+
+      if (hours > 99) {
+        milliseconds = 99;
+        seconds = 99;
+        minutes = 99;
+        hours = 99;
+      }
 
       return {
         isNegative,

@@ -1,7 +1,6 @@
 export interface CounterState extends Object {
-  startTime: Date;
+  startTimeMs: number;
   delayMinutesBetweenHeats: number;
-  nextHeat: number;
   numHeats: number;
   currentHeat: number;
   started: boolean;
@@ -12,9 +11,8 @@ export interface CounterState extends Object {
 export interface SetState {
   startTimeMs: number;
   delayMinutesBetweenHeats: number;
-  nextHeat: number;
+
   numHeats: number;
-  currentHeat: number;
+
   started: boolean;
-  finnished: boolean;
 }
