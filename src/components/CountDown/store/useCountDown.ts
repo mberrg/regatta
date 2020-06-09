@@ -98,8 +98,6 @@ class CountDownStore extends Store<CounterState> {
         if (currentHeat > numHeats) {
           this.state.finnished = true;
           currentHeat = numHeats - 1;
-          console.log('FOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO');
-          debugger;
         }
         this.state.currentHeat = currentHeat;
 

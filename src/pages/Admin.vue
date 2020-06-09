@@ -30,13 +30,24 @@
           </q-icon>
         </template>
       </q-input>
-      <q-btn
-        label="Start"
-        color="primary"
-        unelevated
-        style="width: 200px"
-        @click="start"
-      />
+      <div>
+        <q-btn
+          label="Start"
+          color="primary"
+          unelevated
+          style="width: 200px"
+          @click="start"
+        />
+      </div>
+      <div v-if="started">
+        <q-btn
+          label="Stop timers"
+          color="red"
+          unelevated
+          style="width: 200px"
+          @click="reset"
+        />
+      </div>
     </div>
     <div
       class="col  flex flex-center content-stretch text-center"
@@ -59,7 +70,9 @@ import {
 import { date } from 'quasar';
 import ResizeText from 'vue-resize-text';
 
-import { CountDown, SetState } from 'components/CountDown';
+import { CountDown, SetState, useCountDown } from 'components/CountDown';
+
+const location = 'https://regattastart.herokuapp.com';
 
 export default defineComponent({
   name: 'AdminPage',
@@ -76,6 +89,23 @@ export default defineComponent({
       startTime: '00:00'
     });
 
+    const { started } = useCountDown.getState();
+    const reset = async () => {
+      try {
+        const fetchResponse = await fetch(location + '/reset', {
+          method: 'POST',
+          mode: 'cors', // no-cors, *cors, same-origin
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ reset: true })
+        });
+        await fetchResponse.json();
+      } catch (e) {
+        console.log(e);
+      }
+    };
     const start = async () => {
       const hour = parseInt(state.startTime.split(':')[0]);
       const minute = parseInt(state.startTime.split(':')[1]);
@@ -104,10 +134,9 @@ export default defineComponent({
         delayMinutesBetweenHeats: state.heatDelay,
         started: true
       };
-      const location = 'https://regattastart.herokuapp.com/newState';
 
       try {
-        const fetchResponse = await fetch(location, {
+        const fetchResponse = await fetch(location + '/newState', {
           method: 'POST',
           mode: 'cors', // no-cors, *cors, same-origin
           headers: {
@@ -121,7 +150,7 @@ export default defineComponent({
         console.log(e);
       }
     };
-    return { ...toRefs(state), start };
+    return { ...toRefs(state), start, reset, started };
   }
 });
 </script>
