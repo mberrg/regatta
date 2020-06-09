@@ -53,7 +53,10 @@
       class="col  flex flex-center content-stretch text-center"
       style="width: 100%"
     >
-      <count-down class="fit  " v-resize-text="{ ratio: 0.5 }" />
+      <count-down
+        class="fit"
+        v-resize-text="{ ratio: 0.5, maxFontSize: '150px' }"
+      />
     </div>
   </q-page>
 </template>
@@ -63,9 +66,9 @@
 //<div>foo</div>
 import {
   defineComponent,
-  computed,
   reactive,
-  toRefs
+  toRefs,
+  onActivated
 } from '@vue/composition-api';
 import { date } from 'quasar';
 import ResizeText from 'vue-resize-text';
@@ -82,11 +85,16 @@ export default defineComponent({
   components: {
     CountDown
   },
+
   setup() {
     const state = reactive({
       numHeats: 3,
       heatDelay: 15,
       startTime: '00:00'
+    });
+    onActivated(() => {
+      console.log('Admin onActivated');
+      window.dispatchEvent(new Event('resize'));
     });
 
     const { started } = useCountDown.getState();

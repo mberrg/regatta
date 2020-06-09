@@ -5,15 +5,21 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
+import { defineComponent, onActivated } from '@vue/composition-api';
 import ResizeText from 'vue-resize-text';
 import { CountDown } from '../components/CountDown';
 
-export default Vue.extend({
+export default defineComponent({
   name: 'PageIndex',
   directives: {
     ResizeText
   },
-  components: { CountDown }
+  components: { CountDown },
+  setup() {
+    onActivated(() => {
+      console.log('PageIndex onActivated');
+      window.dispatchEvent(new Event('resize'));
+    });
+  }
 });
 </script>

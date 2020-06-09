@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!started">Waiting setup</div>
+  <div v-if="!started" class="countdown">Waiting setup</div>
   <div v-else class="countdown">
     <div style="font-size: 0.2em; ">
       {{ heading }}
