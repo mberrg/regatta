@@ -79,9 +79,8 @@ class CountDownStore extends Store<CounterState> {
     this.state.startTimeMs = startTimeMs;
     this.state.delayMinutesBetweenHeats = delayMinutesBetweenHeats;
     this.state.numHeats = numHeats;
-
+    this.state.started = started;
     if (started) {
-      this.state.started = true;
       this.state.finnished = false;
       const msSinceStart = Date.now() - startTimeMs;
 
@@ -115,6 +114,8 @@ class CountDownStore extends Store<CounterState> {
           this.startTimer();
         }
       }
+    } else {
+      this.stopTimer();
     }
   }
 
