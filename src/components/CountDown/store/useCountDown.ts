@@ -7,6 +7,7 @@ class CountDownStore extends Store<CounterState> {
   private connected = false;
   protected data(): CounterState {
     return {
+      serverOffset: 0,
       startTimeMs: Date.now() + 60 * 60 * 1000,
       delayMinutesBetweenHeats: 15,
       numHeats: 3,
@@ -26,6 +27,15 @@ class CountDownStore extends Store<CounterState> {
     setInterval(() => this._getTimeleft(), 100);
 
     this.connectWS();
+  }
+  nextStartTime() {
+    return computed(() => {
+      return new Date(this.state.started ? this.nextStartTimeMs() : 0);
+    });
+  }
+
+  now() {
+    return Date.now() + this.state.serverOffset;
   }
   closeWS() {
     if (this.socket) this.socket.close();
@@ -66,19 +76,27 @@ class CountDownStore extends Store<CounterState> {
 
   setState(newState: SetState) {
     const {
+      serverNow,
       startTimeMs,
       delayMinutesBetweenHeats,
       numHeats,
       started
     } = newState;
+    this.state.serverOffset = serverNow - Date.now();
+    console.log(
+      `Date.now: ${Date.now()} Server now: ${serverNow} Diff: ${
+        this.state.serverOffset
+      } Adjusted now: ${this.now()}`
+    );
 
     this.state.startTimeMs = startTimeMs;
     this.state.delayMinutesBetweenHeats = delayMinutesBetweenHeats;
     this.state.numHeats = numHeats;
     this.state.started = started;
+
     if (started) {
       this.state.finnished = false;
-      const msSinceStart = Date.now() - startTimeMs;
+      const msSinceStart = this.now() - startTimeMs;
 
       if (msSinceStart < 0) {
         // Not started heat 1
@@ -108,12 +126,6 @@ class CountDownStore extends Store<CounterState> {
     }
   }
 
-  nextStartTime() {
-    return computed(() => {
-      return new Date(this.state.started ? this.nextStartTimeMs() : 0);
-    });
-  }
-
   nextStartTimeMs() {
     const currentHeat = this.state.finnished
       ? this.state.currentHeat - 1
@@ -130,7 +142,7 @@ class CountDownStore extends Store<CounterState> {
     if (this.state.intervalFunc) this.stopTimer();
     console.log('Starting timer');
     this.state.intervalFunc = setInterval(() => {
-      const newtime = this.nextStartTimeMs() - new Date().valueOf();
+      const newtime = this.nextStartTimeMs() - this.now();
 
       if (newtime < 0) {
         this.state.currentHeat++;
@@ -154,7 +166,7 @@ class CountDownStore extends Store<CounterState> {
   _getTimeleft() {
     if (!this.state.started) return;
 
-    const now = Date.now();
+    const now = this.now();
 
     let timeDif = this.nextStartTimeMs() - now;
 

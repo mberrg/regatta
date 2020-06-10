@@ -148,6 +148,7 @@ export default defineComponent({
         .valueOf();
 
       const newState: SetState = {
+        serverNow: 0,
         startTimeMs: startTimeMs,
         numHeats: state.numHeats,
         delayMinutesBetweenHeats: state.heatDelay,

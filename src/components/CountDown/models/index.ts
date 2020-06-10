@@ -1,4 +1,5 @@
 export interface CounterState extends Object {
+  serverOffset: number;
   startTimeMs: number;
   delayMinutesBetweenHeats: number;
   numHeats: number;
@@ -13,10 +14,9 @@ export interface CounterState extends Object {
 }
 
 export interface SetState {
+  serverNow: number;
   startTimeMs: number;
   delayMinutesBetweenHeats: number;
-
   numHeats: number;
-
   started: boolean;
 }
