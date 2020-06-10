@@ -1,7 +1,21 @@
 <template>
-  <q-layout view="lhr lpR lfr">
+  <q-layout
+    view="lhr lpR lfr"
+    v-bind:class="{ active: isActive, normal: !isActive }"
+  >
     <q-header class="bg-white no-shadow text-primary" height-hint="50">
       <q-toolbar>
+        <q-select
+          dense
+          borderless
+          v-model="heat"
+          :options="heats"
+          emit-value
+          map-options
+          label="Sound horn for heat"
+          class="col-auto"
+          style="width: 200px"
+        />
         <q-space />
         <q-btn
           v-if="$route.name == 'admin'"
@@ -32,15 +46,92 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
+import {
+  defineComponent,
+  watchEffect,
+  reactive,
+  toRefs,
+  computed
+} from '@vue/composition-api';
 
-export default Vue.extend({
+import { useCountDown } from '../components/CountDown';
+
+export default defineComponent({
   name: 'MainLayout',
 
   components: {},
 
-  data() {
-    return {};
+  setup() {
+    const {
+      started,
+      secondsLeft,
+      minutesLeft,
+      hoursLeft,
+      finnished,
+      numHeats,
+      currentHeat
+    } = useCountDown.getState();
+    let timeout: NodeJS.Timeout | undefined = undefined;
+    const state = reactive({ isActive: false, heat: 0 });
+    const soundHorn = () => {
+      new Audio('statics/horn.wav').play();
+      timeout = undefined;
+    };
+
+    watchEffect(() => {
+      if (
+        started.value &&
+        !finnished.value &&
+        hoursLeft.value == 0 &&
+        secondsLeft.value == 0
+      ) {
+        if (
+          minutesLeft.value == 5 ||
+          minutesLeft.value == 2 ||
+          minutesLeft.value == 0
+        ) {
+          if (state.heat == 0 || state.heat == currentHeat.value) {
+            if (!timeout) timeout = setTimeout(soundHorn, 10); // Call this async
+          }
+
+          state.isActive = true; // change colors on screen
+          setTimeout(() => (state.isActive = false), 1000); // Call this async
+        }
+      }
+    });
+    const heats = computed(() => {
+      const heats = [
+        {
+          label: 'None',
+          value: -1
+        },
+        {
+          label: 'All',
+          value: 0
+        }
+      ];
+      for (let i = 1; i <= numHeats.value; i++) {
+        heats.push({
+          label: `Heat ${i}`,
+          value: i
+        });
+      }
+      return heats;
+    });
+
+    return { ...toRefs(state), heats };
   }
 });
 </script>
+
+<style lang="scss" scoped>
+.normal {
+  background: white;
+  color: black;
+}
+
+.active {
+  color: white;
+  background: black;
+}
+</style>

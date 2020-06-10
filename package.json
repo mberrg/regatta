@@ -1,6 +1,6 @@
 {
   "name": "@mberrg/regatta",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "A app for regatta start",
   "productName": "Regatta App",
   "cordovaId": "org.cordova.quasar.app",

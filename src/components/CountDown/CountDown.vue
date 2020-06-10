@@ -5,9 +5,9 @@
       {{ heading }}
     </div>
     <div>
-      {{ countdown.isNegative ? '-' : '' }}{{ countdown.hours }}:{{
-        countdown.minutes
-      }}:{{ countdown.seconds }}
+      {{ isNegative ? '-' : '' }}{{ pad(hoursLeft, 2) }}:{{
+        pad(minutesLeft, 2)
+      }}:{{ pad(secondsLeft, 2) }}
     </div>
     <div style="font-size: 0.2em; ">
       {{ footer }}
@@ -16,8 +16,16 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed } from '@vue/composition-api';
+import { defineComponent, computed, watchEffect } from '@vue/composition-api';
 import { useCountDown } from './store';
+
+function pad(num: number, size: number) {
+  let s = String(num);
+  while (s.length < (size || 2)) {
+    s = '0' + s;
+  }
+  return s;
+}
 
 export default defineComponent({
   name: 'CountDown',
@@ -27,17 +35,20 @@ export default defineComponent({
       currentHeat,
       numHeats,
       finnished,
-      started
+      started,
+      secondsLeft,
+      minutesLeft,
+      hoursLeft,
+      isNegative
     } = useCountDown.getState();
-
-    const countdown = useCountDown.getTimeleft();
 
     const heading = computed(() => {
       const heatTime = useCountDown.nextStartTime();
-      if (currentHeat.value == 0) {
-        return `First heat starting ${heatTime.value.toLocaleTimeString()}`;
-      }
+
       if (!finnished.value) {
+        if (currentHeat.value == 0) {
+          return `First heat starting ${heatTime.value.toLocaleTimeString()}`;
+        }
         return `Heat ${currentHeat.value +
           1} starting ${heatTime.value.toLocaleTimeString()}`;
       }
@@ -45,22 +56,26 @@ export default defineComponent({
     });
 
     const footer = computed(() => {
-      if (currentHeat.value < 1) {
-        return 'Waiting first start';
-      }
       if (!finnished.value) {
+        if (currentHeat.value < 1) {
+          return 'Waiting first start';
+        }
         return `Heat ${currentHeat.value} of ${numHeats.value}`;
       }
-      return `All heat started (${currentHeat.value + 1} of ${numHeats.value})`;
+      return `All heat started (${currentHeat.value} of ${numHeats.value})`;
     });
 
     return {
+      pad,
       started,
       currentHeat,
       numHeats,
       heading,
       footer,
-      countdown
+      isNegative,
+      secondsLeft,
+      minutesLeft,
+      hoursLeft
     };
   }
 });

@@ -1,33 +1,29 @@
-import { Store, useClock } from 'src/useStore';
+import { Store } from 'src/useStore';
 import { CounterState, SetState } from '../models';
 import { computed } from '@vue/composition-api';
-
-function pad(num: number, size: number) {
-  let s = String(num);
-  while (s.length < (size || 2)) {
-    s = '0' + s;
-  }
-  return s;
-}
 
 class CountDownStore extends Store<CounterState> {
   private socket?: WebSocket;
   private connected = false;
   protected data(): CounterState {
     return {
-      startTimeMs: 0,
+      startTimeMs: Date.now() + 60 * 60 * 1000,
       delayMinutesBetweenHeats: 15,
       numHeats: 3,
       currentHeat: 0,
       started: false,
       finnished: false,
-      intervalFunc: undefined
+      intervalFunc: undefined,
+      isNegative: false,
+      secondsLeft: 99,
+      minutesLeft: 99,
+      hoursLeft: 99
     };
   }
   constructor() {
     super();
 
-    useClock.startClock();
+    setInterval(() => this._getTimeleft(), 100);
 
     this.connectWS();
   }
@@ -94,9 +90,10 @@ class CountDownStore extends Store<CounterState> {
         );
         console.log(`Current heat raw ${currentHeat}`);
 
-        if (currentHeat > numHeats) {
+        if (currentHeat >= numHeats || numHeats <= 1) {
           this.state.finnished = true;
-          currentHeat = numHeats - 1;
+          currentHeat = numHeats;
+          console.log(`Current heat raw2 ${currentHeat}`);
         }
         this.state.currentHeat = currentHeat;
 
@@ -104,15 +101,7 @@ class CountDownStore extends Store<CounterState> {
       }
 
       if (!this.state.finnished) {
-        const nextWholeSecond = Date.now() % 1000;
-
-        if (nextWholeSecond) {
-          setTimeout(() => {
-            this.startTimer();
-          }, nextWholeSecond);
-        } else {
-          this.startTimer();
-        }
+        this.startTimer();
       }
     } else {
       this.stopTimer();
@@ -126,9 +115,12 @@ class CountDownStore extends Store<CounterState> {
   }
 
   nextStartTimeMs() {
+    const currentHeat = this.state.finnished
+      ? this.state.currentHeat - 1
+      : this.state.currentHeat;
     return (
       this.state.startTimeMs +
-      this.state.currentHeat * this.state.delayMinutesBetweenHeats * 60 * 1000
+      currentHeat * this.state.delayMinutesBetweenHeats * 60 * 1000
     );
   }
 
@@ -141,9 +133,8 @@ class CountDownStore extends Store<CounterState> {
       const newtime = this.nextStartTimeMs() - new Date().valueOf();
 
       if (newtime < 0) {
-        if (this.state.currentHeat < this.state.numHeats - 1) {
-          this.state.currentHeat++;
-        } else {
+        this.state.currentHeat++;
+        if (this.state.currentHeat > this.state.numHeats - 1) {
           this.state.finnished = true;
           this.stopTimer();
         }
@@ -160,45 +151,41 @@ class CountDownStore extends Store<CounterState> {
       console.log('Timer does not exists timer');
     }
   }
-  getTimeleft() {
-    return computed(() => {
-      const { now } = useClock.getState();
+  _getTimeleft() {
+    if (!this.state.started) return;
 
-      let timeDif = this.nextStartTimeMs() - now.value;
+    const now = Date.now();
 
-      let isNegative = false;
-      if (timeDif < 0) {
-        if (this.state.finnished) {
-          timeDif = Math.abs(timeDif);
-          isNegative = true;
-        } else {
-          // to stop clock "flickering"
-          timeDif = 0;
-        }
+    let timeDif = this.nextStartTimeMs() - now;
+
+    let isNegative = false;
+    if (timeDif < 0) {
+      if (this.state.finnished) {
+        timeDif = Math.abs(timeDif);
+        isNegative = true;
+      } else {
+        // to stop clock "flickering"
+        timeDif = 0;
       }
-      let milliseconds = timeDif % 1000;
-      timeDif = (timeDif - milliseconds) / 1000; // Now in whole seconds left
-      let seconds = timeDif % 60;
-      timeDif = (timeDif - seconds) / 60; // Now in whole minutes left
-      let minutes = timeDif % 60;
-      timeDif = (timeDif - minutes) / 60; // Now in whole hours left
-      let hours = timeDif;
+    }
 
-      if (hours > 99) {
-        milliseconds = 99;
-        seconds = 99;
-        minutes = 99;
-        hours = 99;
-      }
+    timeDif = Math.ceil(timeDif / 1000); // Now in whole seconds left
+    let seconds = timeDif % 60;
+    timeDif = (timeDif - seconds) / 60; // Now in whole minutes left
+    let minutes = timeDif % 60;
+    timeDif = (timeDif - minutes) / 60; // Now in whole hours left
+    let hours = timeDif;
 
-      return {
-        isNegative,
-        milliseconds: pad(milliseconds, 2),
-        seconds: pad(seconds, 2),
-        minutes: pad(minutes, 2),
-        hours: pad(hours, 2)
-      };
-    });
+    if (hours > 99) {
+      seconds = 99;
+      minutes = 99;
+      hours = 99;
+    }
+
+    if (this.state.isNegative != isNegative) this.state.isNegative = isNegative;
+    if (this.state.secondsLeft != seconds) this.state.secondsLeft = seconds;
+    if (this.state.minutesLeft != minutes) this.state.minutesLeft = minutes;
+    if (this.state.hoursLeft != hours) this.state.hoursLeft = hours;
   }
 }
 

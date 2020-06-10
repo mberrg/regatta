@@ -6,6 +6,10 @@ export interface CounterState extends Object {
   started: boolean;
   finnished: boolean;
   intervalFunc?: NodeJS.Timeout;
+  isNegative: boolean;
+  secondsLeft: number;
+  minutesLeft: number;
+  hoursLeft: number;
 }
 
 export interface SetState {

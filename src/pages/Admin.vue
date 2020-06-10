@@ -12,8 +12,10 @@
         v-model.number="heatDelay"
         label="Delay between heats (min)"
         type="number"
+        :min="1"
         filled
         style="width: 200px"
+        hint=">5min for full horn sequence"
       />
       <q-input
         filled
@@ -21,6 +23,7 @@
         mask="time"
         :rules="['time']"
         style="width: 200px"
+        label="Start time"
       >
         <template v-slot:append>
           <q-icon name="access_time" class="cursor-pointer">
@@ -87,11 +90,19 @@ export default defineComponent({
   },
 
   setup() {
+    const {
+      numHeats,
+      delayMinutesBetweenHeats,
+      startTimeMs
+    } = useCountDown.getState();
+    const startime = new Date(startTimeMs.value);
+
     const state = reactive({
-      numHeats: 3,
-      heatDelay: 15,
-      startTime: '00:00'
+      numHeats: numHeats.value,
+      heatDelay: delayMinutesBetweenHeats.value,
+      startTime: `${startime.getHours()}:${startime.getMinutes()}`
     });
+
     onActivated(() => {
       console.log('Admin onActivated');
       window.dispatchEvent(new Event('resize'));
