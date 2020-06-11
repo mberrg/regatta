@@ -87,7 +87,8 @@ export default defineComponent({
       ) {
         if (
           minutesLeft.value == 5 ||
-          minutesLeft.value == 2 ||
+          minutesLeft.value == 4 ||
+          minutesLeft.value == 1 ||
           minutesLeft.value == 0
         ) {
           if (state.heat == 0 || state.heat == currentHeat.value) {
