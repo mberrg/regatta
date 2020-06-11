@@ -73,8 +73,10 @@ export default defineComponent({
     } = useCountDown.getState();
     let timeout: NodeJS.Timeout | undefined = undefined;
     const state = reactive({ isActive: false, heat: 0 });
+    const horn = new Audio('statics/horn.wav'); // Must be static and not loading when tab idle
+
     const soundHorn = () => {
-      new Audio('statics/horn.wav').play();
+      horn.play();
       timeout = undefined;
     };
 

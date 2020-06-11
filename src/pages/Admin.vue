@@ -100,7 +100,7 @@ export default defineComponent({
     const state = reactive({
       numHeats: numHeats.value,
       heatDelay: delayMinutesBetweenHeats.value,
-      startTime: `${startime.getHours()}:${startime.getMinutes()}`
+      startTime: `${startime.getHours()}:00`
     });
 
     onActivated(() => {

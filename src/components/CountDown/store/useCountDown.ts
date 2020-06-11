@@ -9,7 +9,7 @@ class CountDownStore extends Store<CounterState> {
     return {
       serverOffset: 0,
       startTimeMs: Date.now() + 60 * 60 * 1000,
-      delayMinutesBetweenHeats: 15,
+      delayMinutesBetweenHeats: 5,
       numHeats: 3,
       currentHeat: 0,
       started: false,
