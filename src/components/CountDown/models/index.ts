@@ -19,4 +19,5 @@ export interface SetState {
   delayMinutesBetweenHeats: number;
   numHeats: number;
   started: boolean;
+  password: string;
 }

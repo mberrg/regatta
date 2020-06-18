@@ -2,6 +2,13 @@
   <q-page class="fit column items-center">
     <div class="col-auto q-gutter-md q-pb-md">
       <q-input
+        v-model="password"
+        label="Admin password"
+        type="password"
+        filled
+        style="width: 200px"
+      />
+      <q-input
         v-model.number="numHeats"
         label="Number of heats"
         type="number"
@@ -33,6 +40,7 @@
           </q-icon>
         </template>
       </q-input>
+
       <div>
         <q-btn
           label="Start"
@@ -100,7 +108,8 @@ export default defineComponent({
     const state = reactive({
       numHeats: numHeats.value,
       heatDelay: delayMinutesBetweenHeats.value,
-      startTime: `${startime.getHours()}:00`
+      startTime: `${startime.getHours()}:00`,
+      password: ''
     });
 
     onActivated(() => {
@@ -152,7 +161,8 @@ export default defineComponent({
         startTimeMs: startTimeMs,
         numHeats: state.numHeats,
         delayMinutesBetweenHeats: state.heatDelay,
-        started: true
+        started: true,
+        password: state.password
       };
 
       try {
