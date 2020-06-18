@@ -55,6 +55,12 @@ import {
 } from '@vue/composition-api';
 
 import { useCountDown } from '../components/CountDown';
+declare global {
+  interface Window {
+    allOn?: () => void;
+    allOff?: () => void;
+  }
+}
 
 export default defineComponent({
   name: 'MainLayout',
@@ -95,6 +101,12 @@ export default defineComponent({
         ) {
           if (state.heat == 0 || state.heat == currentHeat.value) {
             if (!timeout) timeout = setTimeout(soundHorn, 10); // Call this async
+
+            if (window.allOn && window.allOff) {
+              // Has horn functions (running on electron)
+              setTimeout(window.allOn, 10); //TODO handle overlaping timeouts
+              setTimeout(window.allOn, 1000);
+            }
           }
 
           state.isActive = true; // change colors on screen

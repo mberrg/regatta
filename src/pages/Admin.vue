@@ -83,7 +83,7 @@ import {
 } from '@vue/composition-api';
 import { date } from 'quasar';
 import ResizeText from 'vue-resize-text';
-
+import { Notify } from 'quasar';
 import { CountDown, SetState, useCountDown } from 'components/CountDown';
 
 const location = 'https://regattastart.herokuapp.com';
@@ -129,9 +129,27 @@ export default defineComponent({
           },
           body: JSON.stringify({ reset: true })
         });
-        await fetchResponse.json();
+        if (fetchResponse.status != 200) {
+          console.log('fetchResponse.status');
+          if (fetchResponse.status === 401)
+            Notify.create({
+              message: 'Access denied'
+            });
+          else
+            Notify.create({
+              message: `Network request failed: ${fetchResponse.status}`
+            });
+        } else {
+          Notify.create({
+            message: 'Success'
+          });
+        }
       } catch (e) {
         console.log(e);
+
+        Notify.create({
+          message: 'Failed reset'
+        });
       }
     };
     const start = async () => {
@@ -175,7 +193,21 @@ export default defineComponent({
           },
           body: JSON.stringify(newState)
         });
-        await fetchResponse.json();
+        if (fetchResponse.status != 200) {
+          console.log('fetchResponse.status');
+          if (fetchResponse.status === 401)
+            Notify.create({
+              message: 'Access denied'
+            });
+          else
+            Notify.create({
+              message: `Network request failed: ${fetchResponse.status}`
+            });
+        } else {
+          Notify.create({
+            message: 'Success'
+          });
+        }
       } catch (e) {
         console.log(e);
       }
