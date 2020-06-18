@@ -99,13 +99,14 @@ export default defineComponent({
           minutesLeft.value == 1 ||
           minutesLeft.value == 0
         ) {
+          //state.heat == 0  => all heats
           if (state.heat == 0 || state.heat == currentHeat.value) {
-            if (!timeout) timeout = setTimeout(soundHorn, 10); // Call this async
-
             if (window.allOn && window.allOff) {
               // Has horn functions (running on electron)
               setTimeout(window.allOn, 10); //TODO handle overlaping timeouts
               setTimeout(window.allOn, 1000);
+            } else {
+              if (!timeout) timeout = setTimeout(soundHorn, 10); // Call this async
             }
           }
 
